@@ -1,0 +1,209 @@
+@charset "UTF-8";
+@import 'function_v2';
+
+/*
+ * @author: litingting
+ * @time: 2017-11-27
+*/
+
+@include rem_query;
+@import 'function_v2';
+
+@keyframes bounceInDown {
+    0%, 100%, 60%, 75%, 90% {
+        transition-timing-function: cubic-bezier(0.215, .61, .355, 1)
+    }
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0)
+    }
+    60% {
+        opacity: 1;
+        transform: translate3d(0, 25px, 0)
+    }
+    75% {
+        opacity: 1;
+        transform: translate3d(0, -10px, 0)
+    }
+    90% {
+        opacity: 1;
+        transform: translate3d(0, 5px, 0)
+    }
+    100% {
+        opacity: 1;
+        transform: none
+    }
+}
+@keyframes bounceOutDown {
+  20% {
+    transform: translate3d(0, 10px, 0)
+  }
+  40%,
+  45% {
+    opacity: 1;
+    transform: translate3d(0, -20px, 0)
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 2000px, 0)
+  }
+}
+@keyframes bounceOutUp {
+  20% {
+    transform: translate3d(0, -10px, 0)
+  }
+  40%,
+  45% {
+    opacity: 1;
+    transform: translate3d(0, 20px, 0)
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -2000px, 0)
+  }
+}
+@keyframes bounceInUp {
+  0%, 100%, 60%, 75%, 90% {
+    transition-timing-function: cubic-bezier(0.215, .61, .355, 1)
+  }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 3000px, 0)
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -20px, 0)
+  }
+  75% {
+    transform: translate3d(0, 10px, 0)
+  }
+  90% {
+    transform: translate3d(0, -5px, 0)
+  }
+  100% {
+    transform: translate3d(0, 0, 0)
+  }
+}
+@keyframes shake {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(-20deg);
+    }
+}
+/* 弹窗
+----------------------------------------------------------------*/
+.jumping_alert {
+    &.#{"in"} {
+        animation-name: bounceInDown;
+    }
+    &.#{"out"} {
+        animation-name: bounceOutUp;
+        pointer-events: none;
+        visibility: hidden;
+    }
+    animation-fill-mode: forwards;
+    animation-duration: 0.5s;
+    transition: visibility 1s linear;
+    visibility: visible;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: $index_mask + 8;
+    &_inner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-top: rem(-600/4);
+        margin-left: rem(-418/4);
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: rem(40/2);  
+        width: rem(418/2);
+        height: rem(500/2);
+        border-radius: rem(15);
+        color: #e9ba12;
+        text-align: center;
+        background: rgba(#000,0.8);
+    }
+    &_tip {
+        position: relative;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 auto;
+        width: rem(310/2);
+        height: rem(250/2);
+        &::before {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            content: '';
+            height: rem(250/2);
+            border: 1px dashed  #e9ba12;
+            transform: translateX(-50%) scaleX(0.5);
+        }
+        &_arrow {
+            position: absolute;
+            top: rem(90/2);
+            left: 0;
+            background: url(images/gametips@2x.png?__sprite=game&__rem=20);
+            &.type_right {
+                position: absolute;
+                left: auto;
+                right: 0;
+                transform: scaleX(-1);
+            }
+        }
+    }
+    &_desc {
+        margin: rem(30/2) auto;
+        font-size: rem(24/2);
+    }
+    &_small {
+        margin: rem(30/2) auto rem(36/2);
+        text-align: center;
+        font-size: rem(20/2);
+        color: #51b236;
+        em {
+            color: #e9ba12;
+        }
+    }
+    &_text {
+        font-size: rem(32);
+    }
+    &_btn {
+        margin: 0 auto;
+        width: rem(220/2);
+        height: rem(80/2);
+        font-weight: 300;
+        letter-spacing: rem(2);
+        text-align: center;
+        line-height: rem(80/2);
+        color: #e9ba12;
+        font-size: rem(48/2);
+        border: 1px solid rgb(233, 186, 18);
+        border-radius: rem(40);
+    }
+}
+
+/* 游戏容器 
+----------------------------------------------------------------*/
+.jumping_game {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    canvas {
+        width: 100%;
+    }
+}
+
+
+
