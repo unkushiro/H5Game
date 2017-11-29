@@ -40,9 +40,10 @@
 
     <!-- S 游戏结束 -->
     <!-- 显示: in、隐藏：out  -->
-    <div class="jumping_alert out" id="J_endLayer">
+    <div class="jumping_alert out" id="J_restarLayer">
         <div class="jumping_alert_inner">
             <p class="jumping_alert_text">游戏结束</p>
+            <div class="jumping_alert_btn" id="J_restartBtn">Restart</div>
         </div>
     </div>
     <!-- E 游戏结束 -->
@@ -58,32 +59,50 @@
   <%= getJS('createjs.min.js') %>
   <%= getJS() %>
   <script>
-    window.onload = function(){
+    (function(){
+        // 游戏初始化
+        Game.init({
+            onGameEnd: function(score) {
+                layerRestart.classList.toggle('in');
+                layerRestart.classList.toggle('out');
+                console.log("分数为：",score);
+            }
+        });
+
+        // 游戏预加载
         Game.loader(function(progress){
             console.log("加载中",progress)
         },function(){
             console.log("加载完成");
-            // 游戏运行
-            Game.init({
-                onGameEnd: function(score) {
-                    var layerEnd = document.getElementById('J_endLayer');
-                    layerEnd.classList.toggle('in');
-                    layerEnd.classList.toggle('out');
-                }
-            });
+            Game.run();
         })
-
-        // 点击start按钮：关闭游戏提示&菜单、播放音乐
+        
+        // 开始游戏
         var btnStart = document.getElementById('J_startBtn');
         var layerStart = document.getElementById('J_startLayer');
         btnStart.addEventListener('click',function(){
-            // 游戏初始化
             layerStart.classList.toggle('in');
             layerStart.classList.toggle('out');
             
             window.Game.start();            
         })
-    }
+
+        // 重新开始
+        var btnRestart = document.getElementById('J_restartBtn');
+        var layerRestart = document.getElementById('J_restarLayer');
+        btnRestart.addEventListener('click',function(){
+            layerRestart.classList.toggle('in');
+            layerRestart.classList.toggle('out');
+            
+            window.Game.restart();            
+        })
+        // 禁止页面滑动
+        document.addEventListener('touchmove',function(e){
+            e.preventDefault();
+        })
+
+    })();
+    
   </script>
 </body>
 </html>

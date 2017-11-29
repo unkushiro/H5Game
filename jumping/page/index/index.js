@@ -19,7 +19,7 @@ createjs.clearInterval = function(interval) {
     interval = undefined; 
 }
 
-// 工具类
+// 工具辅助类函数
 var Utils = {
     // 函数节流
     throttle: function(fn, wait, scope) {
@@ -116,24 +116,10 @@ var Utils = {
         }
         return j;
     },
-    // 实现办法一: 按设定概率生成随机数组，用以生成 障碍距离数组
-    // pr的形式示例:[0,0,0,0,0,1,1,2,2,3],// 0占50%，1占20%，2占20%，3占10%
-    createRandomInt_1: function(pr, len) {
-        if(len === 1) {
-            Utils.shuffle(pr);
-            return pr[0];
-        }
-        
-        var arr = [];
-        for(var i = 0; i < len ; i++) {
-            Utils.shuffle(pr);
-            arr.push(pr[0]);
-        }
-        return arr;     
-    },
-    // 实现办法二: 按设定概率生成随机数组，用以生成 障碍距离数组
+    // 按设定概率生成随机数组，用以生成 障碍距离数组
+    // 实现办法二: 使用random() 
     // pr的形式示例:[0.5, 0.2, 0.2, 0.1],// 0占50%，1占20%，2占20%，3占10%
-    createRandomInt_2: function(pr,len) {
+    createRandomInt_1: function(pr,len) {
         // 取概率分母
         var Prob = [];
         for(var q = 0; q < pr.length; q++) {
@@ -165,12 +151,32 @@ var Utils = {
             return arr;
         }
     },
+    // 按设定概率生成随机数组，用以生成 障碍距离数组
+    // 实现办法一: 利用洗牌算法替代random() && 直接传入等概率数组A
+    // pr的形式示例:[0,0,0,0,0,1,1,2,2,3],// 0占50%，1占20%，2占20%，3占10%
+    createRandomInt_2: function(pr, len) {
+        if(len === 1) {
+            Utils.shuffle(pr);
+            return pr[0];
+        }
+        
+        var arr = [];
+        for(var i = 0; i < len ; i++) {
+            Utils.shuffle(pr);
+            arr.push(pr[0]);
+        }
+        return arr;     
+    },
     // 反方向定位
     getOppoPos: function(objHeight, objBtmPos, stageHeight) {
         return - (objHeight - stageHeight + objBtmPos);
     }
 }
 
+/**
+ * 游戏主函数
+ * @constructor
+ */
 var Game = {
     // 暴露方法： init 、start 、restart 、 destory、pause、 resume
     init: function(opts){
@@ -213,25 +219,37 @@ var Game = {
             createjs.Ticker.timingMode = createjs.Ticker.RAF;
         }
 
-        // 游戏运行所需参数
+        // 游戏静态参数
         this.areaThreshold = this.stageWidth / 2; // 点击区域划分阈值
-        this.stairSerial = Utils.createRandomOneZero(this.config.initStairs); // 无障碍阶梯初始化数组
-        this.barrSerial = Utils.createRandomInt_2(this.config.distProb, this.config.initStairs); // 障碍阶梯初始化数组
         this.isAndroid = ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1;
+        this.isStart = false;
+    },
+    run: function() {
+        // 游戏运行所需参数
+        this.stairSerial = Utils.createRandomOneZero(this.config.initStairs); // 无障碍阶梯初始化数组
+        this.barrSerial = Utils.createRandomInt_1(this.config.distProb, this.config.initStairs); // 障碍阶梯初始化数组
         this.clickTimes = 0; // 用户点击次数
         this.dropInterval = null; // 定时器
         this.gameScore = 0; // 记录分数
 
         // 初始化场景
-        //渲染
         createjs.Ticker.setPaused(false);
-        // 初始化场景
         this._createScene();
-    },
-    start: function() {
-        var self  = this;
+
         // 绑定事件
         this._bindEvents();
+    },
+    start: function() {
+        // 允许监听响应
+        this.isStart = true;
+    },
+    restart: function() {
+        // 清理舞台
+        this.stage.clear();
+
+        // 重新开始
+        this.run();
+        this.start();
     },
     loader: function(onLoad, onComplete) {
         var manifest = [
@@ -295,6 +313,7 @@ var Game = {
     },
     _handleUserClick: function(e) {
         var self = this;
+        if(!this.isStart) return;
 
         // 第一次点击开始启动自动掉落阶梯
         this._autoDropStair();
@@ -321,11 +340,11 @@ var Game = {
             case "barr": 
                 this._shakeStairs();
                 this.Robot.hitAndDisappear();
-                this._gameOver(e);
+                this._gameOver();
                 break;
             case "drop":
                 this.Robot.dropAndDisappear(direct);
-                this._gameOver(e);
+                this._gameOver();
                 break;
             case "pass":
                 this.gameScore++;
@@ -333,13 +352,13 @@ var Game = {
         }
 
     },
-    _gameOver: function(e) {
+    _gameOver: function() {
         var self = this;
         // 去掉定时器
         this._clearAutoDropStair();
 
-        // 移除事件
-        e.remove();
+        // 暂停监听
+        this.isStart = false;
 
         // 游戏结束回调
         this.config.onGameEnd(this.gameScore);
@@ -348,7 +367,6 @@ var Game = {
         setTimeout(function(){
             createjs.Ticker.setPaused(true);
         },1000);
-
     },
     _centerStairs: function(transX ,transY){
         this.Stairs.lastX -= transX;
@@ -375,7 +393,7 @@ var Game = {
     },
     _addStair: function() {
         var stairSerialNum = Utils.createRandomOneZero(1);
-        var barrSerialNum = Utils.createRandomInt_2(this.config.distProb, 1);
+        var barrSerialNum = Utils.createRandomInt_1(this.config.distProb, 1);
         var needAnimation = true;
         this.stairSerial.push(stairSerialNum);
         this.barrSerial.push(barrSerialNum);
@@ -389,6 +407,7 @@ var Game = {
             if(self.Floor.dropIndex == self.clickTimes) { // 机器人脚下的街砖掉落
                 createjs.clearInterval(self.dropInterval);
                 self.Robot.dropAndDisappear();
+                self._gameOver();
             }
         }, 500);
     },
@@ -432,6 +451,7 @@ var Robot = function(config) {
 
     this.init();
 }
+
 Robot.prototype.init = function(){
     var spriteSheet = new createjs.SpriteSheet({
         "images": [Game.loader.getResult('spriterobot')],
@@ -458,24 +478,28 @@ Robot.prototype.move = function(transX, transY){
     this.sprite.gotoAndPlay('jump');
     createjs.Tween.get(this.sprite).to({x: this.lastPosX, y: this.lastPosY },200);
 };
+
 Robot.prototype.right = function(){
     if(this.lastDirect === 1) return;
     this.sprite.regX = 145;
     this.sprite.scaleX = -1;
     this.lastDirect = 1;
 };
+
 Robot.prototype.left = function(){
     if(this.lastDirect === 0) return;
     this.sprite.regX = 0;
     this.sprite.scaleX = 1;
     this.lastDirect = 0;
 };
+
 Robot.prototype.hitAndDisappear = function(){
     createjs.Tween.removeTweens(this.sprite);
     createjs.Tween.get(this.sprite, {override: true})
     .wait(500)
     .set({visible:false})
 };
+
 Robot.prototype.dropAndDisappear = function(direction){
     // 没有方向值时为直线掉落，否则为跳跃掉落
     var x = (typeof direction === "undefined") ? 0 : ( direction ?  75 : -75 );
@@ -652,6 +676,7 @@ Floor.prototype.init = function() {
     this.sprite = new createjs.Container();
     this.sprite.addChild(this.stairCon, this.barrCon);
 };
+
 Floor.prototype.adjustZIndex = function(container) { // 阶砖显示层次按y轴位置进行调整，低位覆盖高位
     function sortFunction(obj1, obj2, options) {
         if (obj1.y > obj2.y) { return 1; }
@@ -660,6 +685,7 @@ Floor.prototype.adjustZIndex = function(container) { // 阶砖显示层次按y�
     }
     container.sortChildren(sortFunction);
 }
+
 Floor.prototype._add = function(stairSerialNum, barrSerialNum, needAnimation) {
     // 记录
     this.stairSerial.push(stairSerialNum);
@@ -708,6 +734,7 @@ Floor.prototype._add = function(stairSerialNum, barrSerialNum, needAnimation) {
     this.lastPosY = tmpStairY;
 
 }
+
 Floor.prototype.add = function(stairSerial, barrSerial, needAnimation) {
     if(typeof stairSerial === "object") { // 数组形式
         var len = stairSerial.length;
@@ -722,6 +749,7 @@ Floor.prototype.add = function(stairSerial, barrSerial, needAnimation) {
     this.adjustZIndex(this.barrCon);
 
 };
+
 Floor.prototype._dropStair = function(stair) {
     var self = this;
 
@@ -754,6 +782,7 @@ Floor.prototype._dropStair = function(stair) {
 
     this.dropIndex++;
 }
+
 Floor.prototype.drop = function() {
     var self = this;
 
